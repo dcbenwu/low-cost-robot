@@ -36,7 +36,7 @@ def main() -> None:
     from env_diffdrive import DiffDriveGoalEnv
 
     # ------------------------------------------------------------- training
-    env = Monitor(DiffDriveGoalEnv(), logfile=str(out / "train.monitor"))
+    env = Monitor(DiffDriveGoalEnv(), filename=str(out / "train"))
     model = PPO(
         "MlpPolicy",
         env,
@@ -54,15 +54,17 @@ def main() -> None:
 
     # --------------------------------------------------------------- curve
     import numpy as np
+    import csv as _csv
 
-    stats = model.get_stats()
-
-    def series_mean(key: str) -> list[float]:
-        v = stats.get(key)
-        return [float(x) for x in np.asarray(v).tolist()] if v else []
-
-    rewards = series_mean("ep/reward")
-    lengths = series_mean("ep/length")
+    mon = out / "train.monitor.csv"
+    rewards: list[float] = []
+    lengths: list[float] = []
+    if mon.exists():
+        with mon.open() as fh:
+            lines = [l for l in fh if not l.lstrip().startswith("#")]
+            rows = list(_csv.DictReader(lines))
+            rewards = [float(r["r"]) for r in rows]
+            lengths = [float(r["l"]) for r in rows]
     (out / "curve.csv").write_text(
         "episode,mean_reward,episode_length\n"
         + "".join(f"{i+1},{r:.4f},{l:.1f}\n" for i, (r, l) in enumerate(zip(rewards, lengths)))
