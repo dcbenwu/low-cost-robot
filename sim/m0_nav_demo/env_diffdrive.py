@@ -3,7 +3,7 @@
 Task: goal-reaching within an episode budget.
 Obs (8): goal in body frame (2), body heading (sin/cos, 2), body linear vel (2), wheel rates (2).
 Action (2): normalized motor torques for left / right wheel, each in [-1, 1].
-Reward: -dist + success bonus (10); episode ends on success or timeout.
+Reward: (prev_dist - dist) potential shaping + success bonus (20) - 0.01/step; ends on success or timeout.
 """
 
 from __future__ import annotations
@@ -19,8 +19,9 @@ from gymnasium import spaces
 XML_PATH = Path(__file__).parent / "robot.xml"
 GOAL_RADIUS = 0.12          # success radius [m]
 GOAL_RANGE = (0.6, 1.5)     # goal distance band [m]
-MAX_EPISODE_STEPS = 400     # 400 * 0.01s = 4s budget
-SUCCESS_BONUS = 10.0
+MAX_EPISODE_STEPS = 1000    # 1000 * 0.01s = 10s budget (0.24 m/s => can reach full 1.5m)
+SUCCESS_BONUS = 20.0        # dominant, clean success signal (see step() shaping)
+STEP_COST = 0.01            # small per-step cost: prefer reaching on time
 
 
 def _quat_heading(q: np.ndarray) -> float:
@@ -54,6 +55,7 @@ class DiffDriveGoalEnv(gym.Env):
         self.goal = np.zeros(2)
         self.success = False
         self.steps = 0
+        self._prev_dist = float("inf")
 
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(8,), dtype=np.float32)
         self.action_space = spaces.Box(low=np.full(2, -1.0), high=np.full(2, 1.0), shape=(2,), dtype=np.float32)
@@ -91,6 +93,8 @@ class DiffDriveGoalEnv(gym.Env):
         for _ in range(30):  # let the free body settle onto the floor before the first obs
             self.data.ctrl[:] = 0.0
             mujoco.mj_step(self.model, self.data)
+        p0 = self.data.xpos[self.body_id][:2]
+        self._prev_dist = float(np.linalg.norm(self.goal - p0))
         obs = self._obs()
         info = {}
         return obs, info
@@ -106,8 +110,12 @@ class DiffDriveGoalEnv(gym.Env):
         self._physics_step(action)
         pos = self.data.xpos[self.body_id][:2]
         dist = float(np.linalg.norm(self.goal - pos))
+        # Potential-based shaping: reward = (prev_dist - dist). The per-episode
+        # shaping telescopes to (d0 - d_T) and is *bounded*, so SUCCESS_BONUS
+        # dominates the return and the policy sees a clean, learnable signal.
+        reward = float(self._prev_dist - dist) - STEP_COST
+        self._prev_dist = dist
         done = self.steps >= MAX_EPISODE_STEPS
-        reward = -dist
         info: dict = {"distance": dist}
         if dist < GOAL_RADIUS:
             self.success = True
