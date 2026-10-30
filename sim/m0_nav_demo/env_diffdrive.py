@@ -38,7 +38,13 @@ class DiffDriveGoalEnv(gym.Env):
         self.data = mujoco.MjData(self.model)
         self.body_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "robot")
         self.goal_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "goal")
-        self.goal_qpos_adr = self.model.body_qposadr[self.goal_id]
+        # goal body carries a free joint; its qpos start = qpos address of that joint
+        import numpy as _np
+
+        self.goal_qpos_adr = int(self.model.jnt_qposadr[int(_np.where(self.model.jnt_bodyid == self.goal_id)[0][0])])
+        # robot free-joint qvel start (linear world velocities live at qvel[adr..adr+2])
+        self.body_vel_adr = int(self.model.jnt_dofadr[int(_np.where(self.model.jnt_bodyid == self.body_id)[0][0])])
+        self._reset = getattr(mujoco, "mj_resetData", None) or mujoco.mj_reset
         self.wheel_ids = (
             mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_JOINT, "wheel_l_joint"),
             mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_JOINT, "wheel_r_joint"),
@@ -49,16 +55,14 @@ class DiffDriveGoalEnv(gym.Env):
         self.success = False
         self.steps = 0
 
-        low = np.zeros(8, dtype=np.float32)
-        high = np.inf * low
-        self.observation_space = spaces.Box(low=low, high=high, shape=(8,), dtype=np.float32)
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(8,), dtype=np.float32)
         self.action_space = spaces.Box(low=np.full(2, -1.0), high=np.full(2, 1.0), shape=(2,), dtype=np.float32)
         self._reset_externally = True  # SB3 contract: reset() is called before step()
 
     # ------------------------------------------------------------------ obs
     def _obs(self) -> np.ndarray:
         pos = self.data.xpos[self.body_id][:2].copy()
-        vel = self.data.xvel[self.body_id][:2].copy()
+        vel = self.data.qvel[self.body_vel_adr : self.body_vel_adr + 2].copy()
         heading = _quat_heading(self.data.xquat[self.body_id])
         # goal relative in the body frame
         dx, dy = self.goal - pos
@@ -66,25 +70,27 @@ class DiffDriveGoalEnv(gym.Env):
         gx = c * dx - s * dy
         gy = s * dx + c * dy
         wheel_rates = np.array(
-            [self.data.qvel[self.model.jnt_qposadr[j]] for j in self.wheel_ids],
+            [self.data.qvel[self.model.jnt_dofadr[j]] for j in self.wheel_ids],
             dtype=np.float64,
         )
         obs = np.concatenate(
-            [[gx, gy], [np.sin(heading), np.cos(heading)], [vel], wheel_rates]
+            [[gx, gy], [np.sin(heading), np.cos(heading)], vel, wheel_rates]
         ).astype(np.float32)
         return obs
 
     # ---------------------------------------------------------------- reset
     def reset(self, *, seed=None, options=None) -> tuple[np.ndarray, dict]:
         super().reset(seed=seed)
-        mujoco.mj_reset(self.model, self.data)
+        self._reset(self.model, self.data)
         r = np.random.uniform(*GOAL_RANGE)
         a = np.random.uniform(0.0, 2.0 * np.pi)
         self.goal = np.array([r * np.cos(a), r * np.sin(a)])
         self.data.qpos[self.goal_qpos_adr : self.goal_qpos_adr + 2] = self.goal
         self.success = False
         self.steps = 0
-        self._physics_step(np.zeros(2))  # let contacts settle before the first obs
+        for _ in range(30):  # let the free body settle onto the floor before the first obs
+            self.data.ctrl[:] = 0.0
+            mujoco.mj_step(self.model, self.data)
         obs = self._obs()
         info = {}
         return obs, info
