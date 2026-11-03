@@ -2,3 +2,7 @@ __pycache__
 *.pyc
 sim/m0_nav_demo/out/
 .DS_Store
+# ESP-IDF build artifacts (regenerable via `idf.py build`)
+firmware/**/build/
+firmware/**/sdkconfig
+firmware/**/sdkconfig.old

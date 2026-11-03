@@ -1,0 +1,4 @@
+CONFIG_IDF_TARGET="esp32s3"
+# Minimal footprint for the nav policy stub
+CONFIG_FREERTOS_HZ=1000
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=4096
