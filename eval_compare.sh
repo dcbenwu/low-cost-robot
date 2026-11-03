@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Not the seed=0 protocol. Cited M0 rates are eval_all.py / gen_test.py in
+# sim/m0_nav_demo/RESULTS.md. This script overwrites bc_policy.npz.npy.
 cd /home/hock/lcr/m0_nav_demo
 PY=/home/hock/miniconda3/envs/env_isaaclab/bin/python
 LOG=/home/hock/lcr/eval_compare.log
@@ -15,7 +17,7 @@ LOG=/home/hock/lcr/eval_compare.log
     echo "[run$k]"
     $PY eval_bc.py 100 2>/dev/null | grep -viE "warning|warn|box|dtype|logger"
   done
-  echo "=== C. restore best (r2) as active ==="
+  echo "=== C. copy dagger r2 onto bc_policy.npz.npy (not a ranking) ==="
   cp bc_policy_dagger_r2.npy bc_policy.npz.npy
   echo "DONE"
 } > "$LOG" 2>&1

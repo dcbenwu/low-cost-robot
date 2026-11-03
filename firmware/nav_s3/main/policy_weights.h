@@ -4,7 +4,9 @@
 #define POLICY_L1 64
 #define POLICY_L2 64
 #define POLICY_OUT 2
-/* REAL dagger_r4 BC/DAgger policy (76% on R2 stress). float32 bit patterns as uint32_t. */
+/* dagger_r4 weights as float32 bit patterns (uint32_t).
+   seed=0 eval_all.py: 151/200 = 76% training domain, same printed percent as
+   vanilla BC backup 153/200 = 76%. Not a gen_test result. */
 static const uint32_t obs_mu_bits[8] = {
   0x3DA59FF6u, 0x3C6498C1u, 0xBBB0E93Fu, 0x3C970D99u, 0xBB7F3D0Bu, 0x3AE56BDCu, 0x40EF7078u, 0x410960AAu
 };
