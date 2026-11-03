@@ -1,40 +1,61 @@
 #include <stdio.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "act_map.h"
+#include "host_link.h"
+#include "obs_builder.h"
 #include "policy.h"
+#include "sensors.h"
 
-// ---- Stub I/O (no hardware wired yet) ---------------------------------------
-// 8-d observation for the M0 "reach/hold" nav task. Replace with real sensor
-// reads (VL53L0X ToF + IMU + encoder) when the board is assembled.
-static void read_obs(float obs[8]) {
-    obs[0] = 1.00f; // position-ish (m)
-    obs[1] = 0.80f;
-    obs[2] = 0.00f;
-    obs[3] = 0.50f;
-    obs[4] = 0.00f;
-    obs[5] = 0.20f;
-    obs[6] = 1.20f;
-    obs[7] = 1.50f;
-}
-
-// Map raw policy output (act[0]=longitudinal, act[1]=steering) to physical units.
-// Replace the print with ledcWrite + TB6612 direction logic on real hardware.
-#define MAX_SPEED 0.24f // m/s
-#define MAX_STEER 0.45f // rad/s
+/* Map policy left/right torque commands to signed PWM duty.
+   TODO(driver): magnitude -> LEDC, sign -> TB6612 IN1/IN2. No pins are
+   assigned; the board is not assembled. Printf is the stand-in.
+*/
 static void apply_act(const float act[2]) {
-    float v = MAX_SPEED * act[0];
-    float w = MAX_STEER * act[1];
-    printf("[act] v=%.3f m/s  w=%.3f rad/s\n", v, w);
+    float duty[2];
+    act_to_lr_duty(act, duty);
+    printf("[act] L=%+.3f R=%+.3f signed PWM duty "
+           "(left/right torque cmd, STUB, no motor driver)\n",
+           duty[0], duty[1]);
 }
 
 void app_main(void) {
-    printf("nav_s3 firmware STUB: obs(8) -> REAL dagger_r4 MLP(8-64-64-2) -> act(2)\n");
-    float obs[8], act[2];
+    const float dt_s = 0.05f; /* 20 Hz, same tick as the previous stub loop */
+    float obs[NAV_OBS_DIM];
+    float act[2];
+
+    printf("nav_s3: STUB sensors -> obs_builder -> dagger_r4 policy_forward -> L/R duty\n");
+    sensors_init();
+    host_link_init();
+
     while (1) {
-        read_obs(obs);
+        nav_pose_t pose;
+        tof_reading_t tof;
+        float goal_x, goal_y, wl, wr;
+        const char *goal_src = 0;
+
+        host_link_poll();
+        sensors_update(dt_s);
+        sensors_get_pose(&pose);
+        sensors_get_wheel_rates(&wl, &wr);
+        host_link_goal(&goal_x, &goal_y, &goal_src);
+        obs_build(pose.x_m, pose.y_m, pose.yaw_rad, pose.vx_world_m_s, pose.vy_world_m_s,
+                  goal_x, goal_y, wl, wr, obs);
+
+        /* Read ToF so a future obstacle hook has a place to land. Not obs[0:2]. */
+        sensors_read_tof(&tof);
         policy_forward(obs, act);
-        printf("[policy] act[0]=%.4f act[1]=%.4f\n", act[0], act[1]);
+
+        printf("[obs] gx=%.4f gy=%.4f sin=%.4f cos=%.4f vx=%.4f vy=%.4f "
+               "wL=%.4f wR=%.4f goal=%s\n",
+               obs[0], obs[1], obs[2], obs[3], obs[4], obs[5], obs[6], obs[7],
+               goal_src ? goal_src : "?");
+        printf("[tof] STUB valid=%d front=%.2f left=%.2f right=%.2f "
+               "(obstacle/debug only, not the goal)\n",
+               tof.valid, tof.range_m[0], tof.range_m[1], tof.range_m[2]);
+        printf("[policy] L=%.4f R=%.4f\n", act[0], act[1]);
         apply_act(act);
-        vTaskDelay(pdMS_TO_TICKS(50)); // 20 Hz control
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
 }
