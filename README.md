@@ -1,14 +1,14 @@
 # low-cost-robot
 
-低成本机器人项目：仿真里用强化学习（RL）训练策略 → 部署到 ESP32 级千元级真机。
+低成本机器人项目：仿真里用强化学习（RL）训练策略，再部署到真机。长期目标是家务人形；当前 M0–M2 的身体是一辆两轮差速小车（两驱 + 万向轮，三脚着地，不是平衡车）。
 
-**立项背景 / 里程碑 / 预算 / 验收：[PROJECT.md](PROJECT.md)**
+**立项背景 / 长期愿景 / 里程碑 / 预算 / 验收：[PROJECT.md](PROJECT.md)**
 
 ## 目录
 
 ```
 low-cost-robot/
-├── PROJECT.md            # 立项章程：背景、里程碑、预算、风险、验收
+├── PROJECT.md            # 立项章程：愿景、里程碑、预算、风险、验收
 ├── sim/
 │   └── m0_nav_demo/      # M0：MuJoCo diff-drive + SB3 PPO（已跑通，见 README）
 │       ├── robot.xml
