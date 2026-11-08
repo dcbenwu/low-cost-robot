@@ -80,19 +80,25 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     os.makedirs(args.out, exist_ok=True)
-    backend = NewtonBackend(newton, wp, record=args.record, width=args.width, height=args.height, out_dir=args.out)
+    backend = None
     try:
+        backend = NewtonBackend(newton, wp, record=args.record, width=args.width, height=args.height, out_dir=args.out)
         summary = run_session(backend, commands=commands, action_mode=mode, hold_steps=hold)
     except Exception as exc:  # noqa: BLE001
         summary = {
             "learned_policy": False,
             "newton_executed": False,
             "gpu_execution_claimed": False,
+            "phase": "newton_init" if backend is None else "session",
+            "error_type": type(exc).__name__,
             "error": repr(exc),
+            "note": "Init/compile failed before or during the session. This file is the diagnostic; no frame is invented.",
         }
-        _write_summary(args.out, summary)
-        backend.close()
+        path = _write_summary(args.out, summary)
+        if backend is not None:
+            backend.close()
         print(repr(exc), file=sys.stderr)
+        print(path, file=sys.stderr)
         return 1
     summary["frames"] = list(backend.frames)
     summary["render_error"] = backend.render_error

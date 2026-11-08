@@ -24,11 +24,11 @@ cd sim
 python -m unittest laundry_washer.tests.test_task_gates -v
 ```
 
-这些测试走任务逻辑、numpy 刚体积分，以及 MJCF 广义坐标的打包/解包。`gpu_physics_validation` 和 `newton_executed` 都是 false。它们不能代替 uDoge 上的 Newton 步长或画面。
+`test_task_gates` 和 `test_state_map` 是任务逻辑和坐标打包，不是物理验证。`test_mjcf_compile` 用 MuJoCo 编译同一份 XML，检查每个带关节刚体的质量和惯量。都不是 Newton 步进，也不是 GPU 画面。
 
 ```bash
 cd sim
-python -m unittest laundry_washer.tests.test_task_gates laundry_washer.tests.test_state_map -v
+python -m unittest laundry_washer.tests.test_task_gates laundry_washer.tests.test_state_map laundry_washer.tests.test_mjcf_compile -v
 ```
 
 `cli demo` 只是调试用的软件光栅，不是验收画面：
@@ -49,14 +49,16 @@ python -m laundry_washer.cli demo --mode scripted_kinematic --out /tmp/laundry_d
 export PYGLET_HEADLESS=1
 export PYGLET_HEADLESS_DEVICE=0
 export PYTHONPATH="/path/to/laundry_washer_experiment"
-/home/hock/IsaacLab/env_isaaclab/bin/python -m laundry_washer.newton_run \
+# 这台机器上的解释器在 miniconda，不在 Isaac Lab 仓库里。换环境时覆盖 LAUNDRY_PYTHON。
+LAUNDRY_PYTHON="${LAUNDRY_PYTHON:-/home/hock/miniconda3/envs/env_isaaclab/bin/python}"
+"$LAUNDRY_PYTHON" -m laundry_washer.newton_run \
   --mode scripted_kinematic --record --out /tmp/laundry_newton
 ```
 
 手动逐步（同一种坐标写入，不是另一套场景）：
 
 ```bash
-/home/hock/IsaacLab/env_isaaclab/bin/python -m laundry_washer.newton_run \
+"$LAUNDRY_PYTHON" -m laundry_washer.newton_run \
   --mode manual --commands open_door,grasp:shirt,carry:drum,release --record \
   --out /tmp/laundry_manual
 ```
@@ -64,7 +66,7 @@ export PYTHONPATH="/path/to/laundry_washer_experiment"
 `physical` 只写铰链/滑块目标，自由刚体继续受重力，读回的状态如果衣服还在篓子里就不算成功：
 
 ```bash
-/home/hock/IsaacLab/env_isaaclab/bin/python -m laundry_washer.newton_run \
+"$LAUNDRY_PYTHON" -m laundry_washer.newton_run \
   --mode physical --commands open_door --out /tmp/laundry_phys
 ```
 

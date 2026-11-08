@@ -70,7 +70,7 @@ def build_mjcf() -> str:
 <mujoco model="lcr_laundry_washer">
   <!-- rigid garment proxies, not deformable cloth; detergent is not a fluid -->
   <!-- no textures, no external assets; gravity is the laundry baseline -->
-  <compiler angle="radian" autolimits="true"/>
+  <compiler angle="radian" autolimits="true" inertiafromgeom="auto"/>
   <option timestep="0.01" gravity="{g}" integrator="implicitfast" iterations="20" ls_iterations="8"/>
   <visual>
     <headlight diffuse="0.85 0.85 0.85" ambient="0.35 0.35 0.35"/>
@@ -102,6 +102,7 @@ def build_mjcf() -> str:
     <geom name="mark_spin" type="box" pos="0.322 0.18 0.64" size="0.003 0.008 0.006" rgba="0.85 0.25 0.20 1" contype="0" conaffinity="0"/>
 
     <body name="door" pos="{DOOR_HINGE[0]:.3f} {DOOR_HINGE[1]:.3f} {DOOR_HINGE[2]:.3f}">
+      <inertial pos="0.02 0.24 0" mass="3.0" diaginertia="0.08 0.06 0.08"/>
       <joint name="door_hinge" type="hinge" axis="0 0 -1" range="{DOOR_RANGE[0]} {DOOR_RANGE[1]}" damping="1.2" armature="0.02"/>
       <geom name="door_panel" type="box" pos="0.012 0.24 0" size="0.008 0.24 0.24" rgba="0.86 0.88 0.90 1"/>
       <geom name="door_rim" type="cylinder" pos="0.018 0.24 0.02" size="0.175 0.012" euler="0 1.5707963 0" rgba="0.72 0.76 0.80 1" contype="0" conaffinity="0"/>
@@ -111,6 +112,7 @@ def build_mjcf() -> str:
     </body>
 
     <body name="drawer" pos="{DRAWER_ORIGIN[0]:.3f} {DRAWER_ORIGIN[1]:.3f} {DRAWER_ORIGIN[2]:.3f}">
+      <inertial pos="0.02 0 0" mass="1.4" diaginertia="0.02 0.015 0.02"/>
       <joint name="drawer_slide" type="slide" axis="1 0 0" range="{DRAWER_RANGE[0]} {DRAWER_RANGE[1]}" damping="4"/>
       <geom name="drawer_box" type="box" pos="0 0 0" size="0.09 0.15 0.028" rgba="0.70 0.78 0.86 1"/>
       <geom name="drawer_front" type="box" pos="0.10 0 0" size="0.012 0.16 0.04" rgba="0.88 0.89 0.92 1"/>
@@ -119,6 +121,7 @@ def build_mjcf() -> str:
     </body>
 
     <body name="drum" pos="{DRUM_CENTER[0]:.3f} {DRUM_CENTER[1]:.3f} {DRUM_CENTER[2]:.3f}">
+      <inertial pos="0 0 0" mass="6.0" diaginertia="0.12 0.12 0.08"/>
       <joint name="drum_spin" type="hinge" axis="1 0 0" damping="0.05" armature="0.01"/>
       <geom name="drum_shell" type="cylinder" size="{DRUM_RADIUS:.3f} 0.12" euler="0 1.5707963 0" rgba="0.40 0.43 0.48 0.35" contype="0" conaffinity="0"/>
       <geom name="drum_stripe" type="box" pos="0 0.12 0" size="0.10 0.015 0.02" rgba="0.85 0.25 0.18 1" contype="0" conaffinity="0"/>
@@ -126,17 +129,20 @@ def build_mjcf() -> str:
     </body>
 
     <body name="knob" pos="{KNOB_POS[0]:.3f} {KNOB_POS[1]:.3f} {KNOB_POS[2]:.3f}">
+      <inertial pos="0 0 0" mass="0.08" diaginertia="0.0002 0.0002 0.0001"/>
       <joint name="program_knob" type="hinge" axis="1 0 0" range="-0.2 3.4" damping="0.4"/>
       <geom name="knob_body" type="cylinder" size="0.028 0.012" euler="0 1.5707963 0" rgba="0.15 0.15 0.18 1"/>
       <geom name="knob_pointer" type="box" pos="0 0.02 0.02" size="0.008 0.006 0.016" rgba="0.95 0.95 0.95 1" contype="0" conaffinity="0"/>
       <site name="program_knob" pos="0.02 0 0" size="0.008"/>
     </body>
     <body name="start_button" pos="{BUTTON_POS[0]:.3f} {BUTTON_POS[1]:.3f} {BUTTON_POS[2]:.3f}">
+      <inertial pos="0 0 0" mass="0.04" diaginertia="0.00005 0.00005 0.00004"/>
       <joint name="start_button" type="slide" axis="1 0 0" range="-0.01 0" damping="0.2"/>
       <geom name="start_button_cap" type="cylinder" size="0.016 0.008" euler="0 1.5707963 0" rgba="0.15 0.65 0.25 1"/>
       <site name="start_button" pos="0.015 0 0" size="0.008"/>
     </body>
     <body name="door_lock" pos="{LOCK_POS[0]:.3f} {LOCK_POS[1]:.3f} {LOCK_POS[2]:.3f}">
+      <inertial pos="0.01 0 0" mass="0.06" diaginertia="0.00008 0.00008 0.00006"/>
       <joint name="lock_pin" type="slide" axis="1 0 0" range="0 0.025" damping="1"/>
       <geom name="lock_pin_geom" type="box" pos="0.01 0 0" size="0.012 0.01 0.01" rgba="0.95 0.72 0.15 1"/>
     </body>
@@ -157,6 +163,7 @@ def build_mjcf() -> str:
       <geom name="bottle_level" type="cylinder" pos="0 0 -0.01" size="0.028 0.04" rgba="0.25 0.45 0.95 1" contype="0" conaffinity="0"/>
       <site name="pour_mouth" pos="0 0 {MOUTH_LOCAL_Z:.3f}" size="0.008"/>
       <body name="cap" pos="0 0 0.10">
+        <inertial pos="0 0 0" mass="0.03" diaginertia="0.00004 0.00004 0.00002"/>
         <joint name="cap_hinge" type="hinge" axis="0 1 0" range="0 2.6" damping="0.05"/>
         <geom name="cap_geom" type="cylinder" size="0.038 0.012" rgba="0.12 0.14 0.16 1"/>
       </body>
@@ -165,17 +172,23 @@ def build_mjcf() -> str:
     <body name="arm_base" pos="{ARM_BASE[0]:.3f} {ARM_BASE[1]:.3f} {ARM_BASE[2]:.3f}">
       <geom name="arm_pedestal" type="cylinder" pos="0 0 0.16" size="0.06 0.16" rgba="0.25 0.27 0.30 1"/>
       <body name="arm_yaw_link" pos="0 0 {ARM_SHOULDER_Z:.3f}">
+          <inertial pos="0 0 0" mass="0.8" diaginertia="0.004 0.004 0.003"/>
           <joint name="arm_yaw" type="hinge" axis="0 0 1" range="{ARM_YAW_RANGE[0]} {ARM_YAW_RANGE[1]}" damping="1.5" armature="0.05"/>
+          <geom name="arm_yaw_hub" type="cylinder" pos="0 0 0" size="0.05 0.035" rgba="0.25 0.27 0.30 1"/>
         <body name="arm_shoulder_link">
+          <inertial pos="0.12 0 0" mass="1.4" diaginertia="0.02 0.02 0.002"/>
           <joint name="arm_shoulder" type="hinge" axis="0 1 0" range="{ARM_SHOULDER_RANGE[0]} {ARM_SHOULDER_RANGE[1]}" damping="1.5" armature="0.05"/>
           <geom name="arm_upper" type="capsule" fromto="0 0 0 {ARM_L1:.3f} 0 0" size="0.028" rgba="0.95 0.55 0.15 1"/>
           <body name="arm_elbow_link" pos="{ARM_L1:.3f} 0 0">
+            <inertial pos="0.10 0 0" mass="0.9" diaginertia="0.008 0.008 0.001"/>
             <joint name="arm_elbow" type="hinge" axis="0 1 0" range="{ARM_ELBOW_RANGE[0]} {ARM_ELBOW_RANGE[1]}" damping="1.0" armature="0.03"/>
             <geom name="arm_fore" type="capsule" fromto="0 0 0 {ARM_L2:.3f} 0 0" size="0.024" rgba="0.95 0.55 0.15 1"/>
             <body name="arm_wrist_link" pos="{ARM_L2:.3f} 0 0">
+              <inertial pos="0.04 0 0" mass="0.4" diaginertia="0.0015 0.0015 0.0004"/>
               <joint name="arm_wrist" type="hinge" axis="0 1 0" range="{ARM_WRIST_RANGE[0]} {ARM_WRIST_RANGE[1]}" damping="0.6" armature="0.02"/>
               <geom name="arm_tool" type="capsule" fromto="0 0 0 {ARM_L3:.3f} 0 0" size="0.018" rgba="0.85 0.85 0.88 1"/>
               <body name="gripper" pos="{ARM_L3:.3f} 0 0">
+                <inertial pos="0 0 0" mass="0.3" diaginertia="0.0006 0.0005 0.0004"/>
                 <joint name="gripper_slide" type="slide" axis="0 0 1" range="0 0.03" damping="0.5"/>
                 <geom name="finger_a" type="box" pos="0 0.018 0" size="0.018 0.006 0.012" rgba="0.15 0.15 0.16 1"/>
                 <geom name="finger_b" type="box" pos="0 -0.018 0" size="0.018 0.006 0.012" rgba="0.15 0.15 0.16 1"/>
