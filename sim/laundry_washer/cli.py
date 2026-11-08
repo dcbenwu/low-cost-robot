@@ -3,8 +3,7 @@
 CPU commands (no GPU, no Isaac, no Newton):
 
   python -m laundry_washer.cli config
-  python -m laundry_washer.cli demo --mode scripted_kinematic --out /tmp/laundry_demo
-  python -m laundry_washer.cli demo --mode physical --out /tmp/laundry_demo_phys
+  python -m laundry_washer.cli demo --mode scripted_kinematic --out /tmp/laundry_debug_raster
   python -m laundry_washer.cli reset --state /tmp/laundry_state.json
   python -m laundry_washer.cli step --state /tmp/laundry_state.json --action open_door
   python -m laundry_washer.cli diagnostics --state /tmp/laundry_state.json

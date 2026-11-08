@@ -94,13 +94,19 @@ def build_mjcf() -> str:
     <geom name="cab_front_bot" type="box" pos="0.29 0 0.12" size="0.015 0.30 0.12" material="cabinet"/>
     <geom name="cab_front_left" type="box" pos="0.29 0.25 0.42" size="0.015 0.05 0.20" material="cabinet"/>
     <geom name="cab_front_right" type="box" pos="0.29 -0.25 0.42" size="0.015 0.05 0.20" material="cabinet"/>
-    <geom name="panel" type="box" pos="0.31 0.20 0.62" size="0.012 0.08 0.10" rgba="0.25 0.27 0.30 1"/>
+    <geom name="panel" type="box" pos="0.312 0.20 0.64" size="0.008 0.09 0.12" rgba="0.22 0.24 0.28 1"/>
+    <geom name="mark_off" type="box" pos="0.322 0.26 0.72" size="0.003 0.008 0.006" rgba="0.45 0.45 0.48 1" contype="0" conaffinity="0"/>
+    <geom name="mark_cotton" type="box" pos="0.322 0.24 0.70" size="0.003 0.008 0.006" rgba="0.20 0.45 0.90 1" contype="0" conaffinity="0"/>
+    <geom name="mark_synthetic" type="box" pos="0.322 0.22 0.68" size="0.003 0.008 0.006" rgba="0.20 0.70 0.45 1" contype="0" conaffinity="0"/>
+    <geom name="mark_delicate" type="box" pos="0.322 0.20 0.66" size="0.003 0.008 0.006" rgba="0.85 0.55 0.75 1" contype="0" conaffinity="0"/>
+    <geom name="mark_spin" type="box" pos="0.322 0.18 0.64" size="0.003 0.008 0.006" rgba="0.85 0.25 0.20 1" contype="0" conaffinity="0"/>
 
     <body name="door" pos="{DOOR_HINGE[0]:.3f} {DOOR_HINGE[1]:.3f} {DOOR_HINGE[2]:.3f}">
       <joint name="door_hinge" type="hinge" axis="0 0 -1" range="{DOOR_RANGE[0]} {DOOR_RANGE[1]}" damping="1.2" armature="0.02"/>
-      <geom name="door_panel" type="box" pos="0.015 0.24 0" size="0.012 0.22 0.20" rgba="0.82 0.86 0.90 1"/>
-      <geom name="door_glass" type="box" pos="0.022 0.24 0.02" size="0.004 0.11 0.11" rgba="0.55 0.78 0.92 0.45" contype="0" conaffinity="0"/>
-      <geom name="door_handle" type="capsule" fromto="0.02 0.40 -0.06 0.02 0.40 0.06" size="0.012" material="rubber"/>
+      <geom name="door_panel" type="box" pos="0.012 0.24 0" size="0.008 0.24 0.24" rgba="0.86 0.88 0.90 1"/>
+      <geom name="door_rim" type="cylinder" pos="0.018 0.24 0.02" size="0.175 0.012" euler="0 1.5707963 0" rgba="0.72 0.76 0.80 1" contype="0" conaffinity="0"/>
+      <geom name="door_glass" type="cylinder" pos="0.028 0.24 0.02" size="0.145 0.006" euler="0 1.5707963 0" rgba="0.12 0.20 0.28 0.55" contype="0" conaffinity="0"/>
+      <geom name="door_handle" type="capsule" fromto="0.03 0.40 -0.05 0.03 0.40 0.07" size="0.012" material="rubber"/>
       <site name="door_handle" pos="0.03 0.42 0" size="0.01"/>
     </body>
 

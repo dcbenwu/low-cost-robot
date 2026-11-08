@@ -24,20 +24,18 @@ cd sim
 python -m unittest laundry_washer.tests.test_task_gates -v
 ```
 
-这些测试走任务逻辑和 numpy 刚体积分。输出里的 `gpu_physics_validation` 是 false。它们不能代替 uDoge 上的 Newton 步长或画面。
-
-脚本化全过程（CPU 软件光栅，不是 NewtonGL）：
+这些测试走任务逻辑、numpy 刚体积分，以及 MJCF 广义坐标的打包/解包。`gpu_physics_validation` 和 `newton_executed` 都是 false。它们不能代替 uDoge 上的 Newton 步长或画面。
 
 ```bash
 cd sim
-python -m laundry_washer.cli demo --mode scripted_kinematic --out /tmp/laundry_demo
-python -m laundry_washer.cli reset --state /tmp/laundry_state.json
-python -m laundry_washer.cli step --state /tmp/laundry_state.json --action open_door
-python -m laundry_washer.cli diagnostics --state /tmp/laundry_state.json
-python -m laundry_washer.cli config
+python -m unittest laundry_washer.tests.test_task_gates laundry_washer.tests.test_state_map -v
 ```
 
-`demo` 会在结束前把 `summary.json` 和 `frames/frame_*.png` 写好。帧来自当前刚体位姿的软件光栅，画面上有 “NOT LEARNED”“NOT DEFORMABLE CLOTH”“NOT FLUID”。
+`cli demo` 只是调试用的软件光栅，不是验收画面：
+
+```bash
+python -m laundry_washer.cli demo --mode scripted_kinematic --out /tmp/laundry_debug_raster
+```
 
 ## uDoge 上的 GPU 路径（一环境，约 10.6 GB 空闲）
 
@@ -45,17 +43,32 @@ python -m laundry_washer.cli config
 
 把本目录打成独立实验目录后（不需要克隆本仓库）：
 
+同一条入口跑完整脚本，并把任务状态写进 Newton 的广义坐标，再从读回的坐标判定成功。早先的 `newton_run` 只加载 MJCF 并空转，那个缺口已经补上。
+
 ```bash
 export PYGLET_HEADLESS=1
 export PYGLET_HEADLESS_DEVICE=0
 export PYTHONPATH="/path/to/laundry_washer_experiment"
 /home/hock/IsaacLab/env_isaaclab/bin/python -m laundry_washer.newton_run \
-  --steps 180 --out /tmp/laundry_newton
+  --mode scripted_kinematic --record --out /tmp/laundry_newton
 ```
 
-要画面时再加 `--record`。DISPLAY 为空，所以必须先让 pyglet 走 headless，否则会在导入 viewer 时去连 X11。之前 NewtonGL v2 能录到动的帧；这次就绪检查没有再测 GL context。`--record` 如果建不出 context，进程以码 3 退出，`newton_diagnostics.json` 里写 `render_error`，不会补一张假图。
+手动逐步（同一种坐标写入，不是另一套场景）：
 
-只看重力和步长、不录画面时不要加 `--record`。
+```bash
+/home/hock/IsaacLab/env_isaaclab/bin/python -m laundry_washer.newton_run \
+  --mode manual --commands open_door,grasp:shirt,carry:drum,release --record \
+  --out /tmp/laundry_manual
+```
+
+`physical` 只写铰链/滑块目标，自由刚体继续受重力，读回的状态如果衣服还在篓子里就不算成功：
+
+```bash
+/home/hock/IsaacLab/env_isaaclab/bin/python -m laundry_washer.newton_run \
+  --mode physical --commands open_door --out /tmp/laundry_phys
+```
+
+`--record` 在装载、倒液、启动、洗涤这几个状态各存一张 NewtonGL 帧。`newton_summary.json` 在关闭 viewer 之前写好。DISPLAY 为空时必须先设 `PYGLET_HEADLESS=1`。建不出 GL context 时退出码是 3，`render_error` 有原因，不会补假图。云端没有 Newton，这里不宣称这条命令已经跑过。
 
 ### 支持的后端和相机（就这一套）
 
@@ -70,7 +83,7 @@ export PYTHONPATH="/path/to/laundry_washer_experiment"
 | `dt` | 1/120 |
 | 重力 | `(0, 0, -9.81)`，从模型读回，对不上就失败 |
 | 画面 | `newton.viewer.ViewerGL(headless=True, width=640, height=360)` |
-| 眼 / 看向 | `(1.35, -1.15, 0.92)` / `(0.28, 0.00, 0.45)`，Z 向上，pitch/yaw 为角度，与 Isaac Lab `93d7bef` 的 `_eye_lookat_to_pitch_yaw` 相同 |
+| 眼 / 看向 | `(1.85, -0.95, 1.05)` / `(0.20, -0.02, 0.48)`，前上方 3/4，门、篓子、瓶子、抽屉和旋钮都在画面里。pitch/yaw 为角度，Z 向上 |
 | 纹理 | 无。只有程序生成的纯色几何，没有 HDR、没有穹顶长图 |
 | 录像源别名 | `visualizer:newton`（`newton_gl` 的旧别名，这台机器上录出过真实帧） |
 

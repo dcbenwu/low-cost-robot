@@ -34,8 +34,10 @@ VIDEO_SOURCE = "visualizer:newton"
 VISUALIZER_TYPE = "newton_gl"
 WINDOW_WIDTH = 640
 WINDOW_HEIGHT = 360
-EYE = (1.35, -1.15, 0.92)
-LOOKAT = (0.28, 0.00, 0.45)
+# Front three-quarter view: door and drum opening, basket on -Y, bottle on +Y,
+# drawer, knob and start button. Not a close crop of one part.
+EYE = (1.85, -0.95, 1.05)
+LOOKAT = (0.20, -0.02, 0.48)
 BACKGROUND_COLOR = (0.16, 0.18, 0.22)
 STREAMING_VIEW = False
 ENABLE_SHADOWS = False
